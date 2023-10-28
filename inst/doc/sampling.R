@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -28,6 +28,9 @@ dts_sample_2 <- simulate(as_vlmc(best_vlmc), 10, init = c(0L, 0L))
 
 ## -----------------------------------------------------------------------------
 dts_sample_2
+
+## -----------------------------------------------------------------------------
+dts_sample_3 <- simulate(as_vlmc(best_vlmc), 10, burnin = 20)
 
 ## -----------------------------------------------------------------------------
 CAC_raw <- as.data.frame(EuStockMarkets)$CAC
@@ -67,12 +70,13 @@ long_sequence <- function(dts) {
 
 ## ----cache=TRUE---------------------------------------------------------------
 bootstrap_samples <- vector(100, mode = "list")
-burning_time <- 50 * depth(CAC_model)
+burn_in_time <- 50 * depth(CAC_model)
 for (b in seq_along(bootstrap_samples)) {
   bootstrap_samples[[b]] <- simulate(CAC_model,
-    burning_time + length(CAC_dts),
+    length(CAC_dts),
+    burin = burn_in_time,
     seed = b
-  )[-(1:burning_time)]
+  )
 }
 
 ## ----cache=TRUE---------------------------------------------------------------

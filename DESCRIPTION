@@ -1,7 +1,7 @@
 Package: mixvlmc
 Type: Package
 Title: Variable Length Markov Chains with Covariates
-Version: 0.1.1
+Version: 0.2.0
 Authors@R: 
     c(person(given = "Fabrice",
              family = "Rossi",
@@ -29,20 +29,22 @@ URL: https://github.com/fabrice-rossi/mixvlmc,
 BugReports: https://github.com/fabrice-rossi/mixvlmc/issues
 Encoding: UTF-8
 LazyData: true
-Imports: assertthat, butcher, nnet, pROC, Rcpp (>= 1.0.8.3), rlang,
-        stats, stringr, VGAM, withr
+Imports: assertthat, butcher, ggplot2, methods, nnet, pROC, Rcpp (>=
+        1.0.8.3), rlang, stats, stringr, VGAM, withr
 LinkingTo: Rcpp
 RoxygenNote: 7.2.3
-Suggests: data.table, geodist, ggplot2, knitr, rmarkdown, testthat (>=
-        3.0.0), tibble
+Suggests: data.table, geodist, knitr, rmarkdown, testthat (>= 3.0.0),
+        tibble, vdiffr, waldo
 Config/testthat/edition: 3
+Config/testthat/parallel: true
+Config/testthat/start-first: covlmc*
 Depends: R (>= 2.10)
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2023-07-08 18:13:52 UTC; fabrice
+Packaged: 2023-10-28 18:50:29 UTC; fabrice
 Author: Fabrice Rossi [aut, cre, cph] (<https://orcid.org/0000-0003-4638-1286>),
   Hugo Le Picard [ctb] (<https://orcid.org/0000-0002-7023-2996>),
   Guénolé Joubioux [ctb]
 Maintainer: Fabrice Rossi <Fabrice.Rossi@apiacoa.org>
 Repository: CRAN
-Date/Publication: 2023-07-10 16:20:02 UTC
+Date/Publication: 2023-10-28 21:50:02 UTC

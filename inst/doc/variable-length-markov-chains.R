@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -12,18 +12,18 @@ library(mixvlmc)
 library(geodist) ## used in the earth quake example
 library(ggplot2) ## used in the earth quake example
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 homc <- data.frame(m = 1:10)
 homc$parameters <- 3 * (4^homc$m)
 homc
 
 ## ----echo=FALSE---------------------------------------------------------------
 bin_mark <- cbind(
-  data.frame(Probablity = c(0.1, 0.2, 0.1, 0.3, 0.1, 0.4, 0.1, 0.3)),
-  expand.grid("n-1" = 0:1, "n-2" = 0:1, "n-3" = 0:1)
+  expand.grid("n-3" = 0:1, "n-2" = 0:1, "n-1" = 0:1),
+  data.frame(Probablity = c(0.1, 0.1, 0.1, 0.1, 0.2, 0.4, 0.3, 0.3))
 )
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 bin_mark
 
 ## -----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ model_theo
 ## -----------------------------------------------------------------------------
 model_large <- vlmc(x, cutoff = 0.5 * log(length(x)))
 model_large
-model_cutoff <- cutoff(model_large, mode = "native")
+model_cutoff <- cutoff(model_large, scale = "native")
 model_cutoff
 
 ## -----------------------------------------------------------------------------
@@ -68,7 +68,8 @@ California_weeks <- rep(0, max(globalearthquake$nbweeks))
 California_weeks[California_earth_quakes$nbweeks] <- 1
 
 ## -----------------------------------------------------------------------------
-California_weeks_earth_quakes_model <- tune_vlmc(California_weeks)
+California_weeks_earth_quakes_model <- tune_vlmc(California_weeks, initial = "truncated")
+plot(California_weeks_earth_quakes_model)
 
 ## -----------------------------------------------------------------------------
 draw(as_vlmc(California_weeks_earth_quakes_model))
@@ -99,4 +100,12 @@ contexts(model_large, cutoff = "native")
 
 ## -----------------------------------------------------------------------------
 contexts(model_large, cutoff = "quantile", reverse = FALSE, frequency = "detailed")
+
+## -----------------------------------------------------------------------------
+ctxs <- contexts(model_large)
+ctxs
+
+## -----------------------------------------------------------------------------
+counts(ctxs[[2]])
+cutoff(ctxs[[3]])
 

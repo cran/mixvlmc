@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -85,6 +85,9 @@ ggplot(elec_tune$results, aes(x = alpha, y = BIC)) +
   geom_point()
 
 ## -----------------------------------------------------------------------------
+print(autoplot(elec_tune))
+
+## -----------------------------------------------------------------------------
 draw(as_covlmc(elec_tune), model = "full", p_value = FALSE, with_state = TRUE)
 
 ## -----------------------------------------------------------------------------
@@ -99,6 +102,7 @@ elec_tune_10
 elec_model <- as_covlmc(elec_tune)
 states(elec_model)
 depth(elec_model)
+covariate_depth(elec_model)
 context_number(elec_model)
 
 ## -----------------------------------------------------------------------------
@@ -114,4 +118,12 @@ contexts(elec_model, model = "coef")
 
 ## -----------------------------------------------------------------------------
 contexts(elec_model, model = "full")
+
+## -----------------------------------------------------------------------------
+ctxs <- contexts(elec_model)
+ctxs
+
+## -----------------------------------------------------------------------------
+model(ctxs[[2]])
+model(ctxs[[3]], type = "full")
 

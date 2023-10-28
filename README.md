@@ -121,14 +121,17 @@ detailed introduction):
 - the root `*` corresponds to an empty context;
 - one can read contexts by following branches (represented by 2 dashes
   `--`) down to their ends (the leaves): for instance
-  $(1, 0, 1, 0, 0, 0)$ is one of the contexts of the tree.
+  $(0, 0, 0, 1, 0, 1)$ is one of the contexts of the tree.
 
-Here the context $(1, 0, 1, 0, 0, 0)$ is associated to the transition
+Here the context $(0, 0, 0, 1, 0, 1)$ is associated to the transition
 probabilities $(1, 0)$. This means that when one observes this context
 in the time series, it is *always* followed by a 0. Notice that contexts
-are traditionally written from the most recent value to the oldest one.
-Thus, the context $(1, 0, 1, 0, 0, 0)$ corresponds to the sub time
-series $(0, 0, 0, 1, 0, 1)$.
+are extends to the left when we go down in the tree as deep nodes
+corresponds to older values. Some papers prefer to write contexts from
+the most recent value to the oldest one. With this convention, the
+“reverse” context $(1, 0, 1, 0, 0, 0)$ corresponds to the sub time
+series $(0, 0, 0, 1, 0, 1)$. Unless otherwise specified, we write
+contexts in the temporal order.
 
 #### BIC based model selection
 
@@ -166,18 +169,16 @@ We adjust automatically an optimal VLMC as follows:
 sun_model_tune <- tune_vlmc(sun_activity)
 sun_model_tune
 #> VLMC context tree on high, low 
-#>  cutoff: 3.481 (quantile: 0.0083243263138364)
+#>  cutoff: 2.306 (quantile: 0.03175)
 #>  Number of contexts: 9 
 #>  Maximum context length: 5 
-#>  Selected by BIC (244.0594)
+#>  Selected by BIC (236.262) with likelihood function "truncated" (-98.83247)
 ```
 
 The results of the pruning process can be represented graphically:
 
 ``` r
-ggplot(sun_model_tune$results, aes(x = alpha, y = BIC)) +
-  geom_line() +
-  geom_point()
+print(autoplot(sun_model_tune) + geom_point())
 ```
 
 <img src="man/figures/README-sunspots_bic-1.png" width="100%" />
@@ -191,11 +192,13 @@ best_sun_model <- as_vlmc(sun_model_tune)
 draw(best_sun_model)
 #> * (0.5052, 0.4948)
 #> +-- high (0.8207, 0.1793)
-#> |   '-- high (0.7899, 0.2101)
-#> |       '-- high (0.7447, 0.2553)
-#> |           +-- high (0.6571, 0.3429)
-#> |           |   '-- low (0.9167, 0.08333)
-#> |           '-- low (1, 0)
+#> |   +-- high (0.7899, 0.2101)
+#> |   |   +-- high (0.7447, 0.2553)
+#> |   |   |   +-- high (0.6571, 0.3429)
+#> |   |   |   |   '-- low (0.9167, 0.08333)
+#> |   |   |   '-- low (1, 0)
+#> |   |   '-- low (0.96, 0.04)
+#> |   '-- low (0.9615, 0.03846)
 #> '-- low (0.1888, 0.8112)
 #>     +-- high (0, 1)
 #>     '-- low (0.2328, 0.7672)
@@ -285,6 +288,12 @@ BIC based model selection as follows:
 
 ``` r
 elec_covlmc_tune <- tune_covlmc(elec_dts, elec_cov)
+print(autoplot(elec_covlmc_tune))
+```
+
+<img src="man/figures/README-elec_tune_process-1.png" width="100%" />
+
+``` r
 best_elec_covlmc <- as_covlmc(elec_covlmc_tune)
 draw(best_elec_covlmc, model = "full", time_sep = " | ", p_value = FALSE)
 #> *
@@ -371,8 +380,8 @@ lh_covlmc <- sapply(covlmc_simul, longuest_high)
 The average longest time spent in *high* consecutively is
 
 - for the VLMC: 243.6 minutes with a standard error of 6.7337834;
-- for the VLMC with covariate: 286.2 minutes with a standard error of
-  8.9157448;
+- for the VLMC with covariate: 286 minutes with a standard error of
+  8.9386235;
 - 410 minutes for the observed time series.
 
 The following figure shows the distributions of the times obtained by

@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Predicting with (CO)VLMC</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Predicting with (CO)VLMC</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(mixvlmc)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Once a (CO)VLMC has been estimated from a sequence, it can used to
+make one step or multiple steps ahead prediction on sequences using the
+same state space. The predictions can be expressed as probabilities on
+the state space for the future value of the time series or directly as
+the most likely value considering the past of the time series.</p>
+<div id="vlmc-case" class="section level3">
+<h3>VLMC case</h3>
+<p>Mixvlmc implements one-step-ahead prediction. This is done in a
+straightforward way, apart for the initial values. Indeed, given a time
+series <span class="math inline">\((x_i)_{1\leq i\leq n}\)</span> and a
+VLMC of order <span class="math inline">\(d\)</span>, the context of
+<span class="math inline">\(x_j\)</span> for <span class="math inline">\(j&gt;d\)</span> can be determined from the <span class="math inline">\(d\)</span> past values <span class="math display">\[
+x_{j-d}, x_{j-d+1}, \ldots, x_{j-1}.
+\]</span> In the VLMC case, this context is associated to a conditional
+probability distribution for <span class="math inline">\(X_j\)</span>.
+This distribution can be reported directly as the “prediction” for <span class="math inline">\(x_j\)</span>, or a direct prediction can be made
+using <span class="math display">\[
+\arg\max_{x\in
+S}\mathbb{P}(X_j=x|X_{j-1}=x_{j-1},\ldots,X_{j-d}=x_{j-d}),
+\]</span> where <span class="math inline">\(S\)</span> is the state
+space of the VLMC. Notice than this can be used to predict <span class="math inline">\(x_{n+1}\)</span> which is unknown, making actual
+predictions.</p>
+</div>
+<div id="covlmc-case" class="section level3">
+<h3>COVLMC case</h3>
+<p>The case of COVLMC is almost identical. The only difference comes
+from the covariate influence. One-step-ahead predictions can be made
+only if the time series of covariates is provided.</p>
+<p>Once the context of <span class="math inline">\(x_j\)</span> has been
+computed as in the case of a VLMC, we obtain from the COVLMC the
+conditional distribution <span class="math display">\[
+\mathbb{P}(X_j|X_{j-1}=x_{j-1},\ldots,X_{j-d}=x_{j-d}, Y_{j-1}=y_{j-1},
+\ldots,
+Y_{j-h}=y_{j-h}),
+\]</span> where <span class="math inline">\(h\)</span> is the order of
+covariate dependency for this context.</p>
+<p>The distribution can be reported or a prediction can be made using
+the mode of the distribution, exactly as in the VLMC case.</p>
+</div>
+<div id="initial-values" class="section level3">
+<h3>Initial values</h3>
+<p>The only difficulty comes in both cases from the initial values <span class="math inline">\(x_1\)</span> to <span class="math inline">\(x_d\)</span> for which no proper context can be
+determined. This issue appears in numerous situations when using
+(CO)VLMC models, in particular for likelihood calculation (see
+<code>vignette(&quot;likelihood&quot;)</code>) and for sampling (see
+<code>vignette(&quot;sampling&quot;)</code>).</p>
+<p>We use the notion of <em>extended context</em> described in detail in
+the likelihood vignette. The key idea is to include in the (CO)VLMC
+additional contexts (and thus conditional distributions) to model the
+first few observations.</p>
+</div>
+</div>
+<div id="in-practice" class="section level2">
+<h2>In practice</h2>
+<div id="vlmc" class="section level3">
+<h3>VLMC</h3>
+<p>Let us consider for example the sun spot time series,
+<code>sunspot.year</code>, seen as a binary time series, with high
+activity associated to a number of sun spots larger than the median
+number.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>sun_activity <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(<span class="fu">ifelse</span>(sunspot.year <span class="sc">&gt;=</span> <span class="fu">median</span>(sunspot.year), <span class="st">&quot;high&quot;</span>, <span class="st">&quot;low&quot;</span>))</span></code></pre></div>
+<p>We adjust automatically an optimal VLMC as follows:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>sun_model_tune <span class="ot">&lt;-</span> <span class="fu">tune_vlmc</span>(sun_activity)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>sun_model_tune</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; VLMC context tree on high, low </span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;  cutoff: 2.306 (quantile: 0.03175)</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;  Number of contexts: 9 </span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;  Maximum context length: 5 </span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;  Selected by BIC (236.262) with likelihood function &quot;truncated&quot; (-98.83247)</span></span></code></pre></div>
+<p>Predictions are obtained as follows:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>sun_model <span class="ot">&lt;-</span> <span class="fu">as_vlmc</span>(sun_model_tune)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>sun_model_predictions <span class="ot">&lt;-</span> <span class="fu">predict</span>(sun_model, sun_activity)</span></code></pre></div>
+<p>Notice that contrarily to many implementations of
+<code>stats::predict()</code>, we do not support predictions without new
+data, but the original time series can of course be used as the “new
+data”.</p>
+<p>Predictions are relatively correct, as shown by the confusion
+matrix:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">table</span>(sun_model_predictions[<span class="sc">-</span><span class="fu">length</span>(sun_model_predictions)], sun_activity)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt;       sun_activity</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;        high low</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   high  119  27</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;   low    27 116</span></span></code></pre></div>
+<p>Notice that we remove the last prediction to be able to perform the
+comparison. We could have asked for it to be excluded directly by
+passing <code>final_pred=FALSE</code> to the <code>predict.vlmc()</code>
+function.</p>
+<p>The BIC used by default in <code>tune_vlmc</code> may be too
+conservative for prediction or sampling oriented use of the final model.
+With the AIC, we obtain a more complex model as follows:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>sun_model_tune_aic <span class="ot">&lt;-</span> <span class="fu">tune_vlmc</span>(sun_activity, <span class="at">criterion =</span> <span class="st">&quot;AIC&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>sun_model_tune_aic</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; VLMC context tree on high, low </span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;  cutoff: 2.306 (quantile: 0.03175)</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt;  Number of contexts: 9 </span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;  Maximum context length: 5 </span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt;  Selected by AIC (203.711) with likelihood function &quot;truncated&quot; (-98.83247)</span></span></code></pre></div>
+<p>As expected it has a slightly better confusion matrix on its
+estimation data set:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">table</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="fu">predict</span>(<span class="fu">as_vlmc</span>(sun_model_tune_aic), sun_activity, <span class="at">final_pred =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  sun_activity</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;       sun_activity</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;        high low</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;   high  119  27</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt;   low    27 116</span></span></code></pre></div>
+<p>Despite the use of penalized likelihood, we may experiment some form
+of overfitting and a split sample approach could be used to study it.
+For instance, one can use AIC to build a VLMC on the first half of the
+sun spots time series and evaluate the quality of the predictions on the
+second half, as follows:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>first_half <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>(<span class="fu">length</span>(sun_activity) <span class="sc">%/%</span> <span class="dv">2</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>sun_model_tune_aic_half <span class="ot">&lt;-</span> <span class="fu">tune_vlmc</span>(sun_activity[first_half], <span class="at">criterion =</span> <span class="st">&quot;AIC&quot;</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>sun_model <span class="ot">&lt;-</span> <span class="fu">as_vlmc</span>(sun_model_tune_aic_half)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="fu">table</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="fu">predict</span>(sun_model, sun_activity[<span class="sc">-</span>first_half], <span class="at">final_pred =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  sun_activity[<span class="sc">-</span>first_half]</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt;       </span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;        high low</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt;   high   67  13</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;   low    14  51</span></span></code></pre></div>
+<p>The predictions remain of a rather good quality.</p>
+</div>
+<div id="covlmc" class="section level3">
+<h3>COVLMC</h3>
+<p>To illustrate COVLMC predictions, we use the French CAC index
+provided in <code>EuStockMarkets</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>CAC_raw <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(EuStockMarkets)<span class="sc">$</span>CAC</span></code></pre></div>
+<p>We turn it into a discrete time series with three values:</p>
+<ul>
+<li>Stay if the value of the index on day t+1 is between 99.5% and
+100.5% of the value on day t</li>
+<li>Up if the value increased by at least 0.5%</li>
+<li>Down if the value decreased by at least 0.5%</li>
+</ul>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>CAC_rel_evol <span class="ot">&lt;-</span> <span class="fu">diff</span>(CAC_raw) <span class="sc">/</span> CAC_raw[<span class="sc">-</span><span class="fu">length</span>(CAC_raw)]</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>CAC_dts <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="fu">ifelse</span>(CAC_rel_evol <span class="sc">&gt;=</span> <span class="fl">0.005</span>, <span class="st">&quot;Up&quot;</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>    <span class="fu">ifelse</span>(CAC_rel_evol <span class="sc">&lt;=</span> <span class="sc">-</span><span class="fl">0.005</span>, <span class="st">&quot;Down&quot;</span>, <span class="st">&quot;Stay&quot;</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  ),</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;Down&quot;</span>, <span class="st">&quot;Stay&quot;</span>, <span class="st">&quot;Up&quot;</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>)</span></code></pre></div>
+<p>We use the other indexes of <code>EuStockMarkets</code> as
+covariates. As previously, we select a model with the AIC criterion:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>CAC_covariates <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(EuStockMarkets)[<span class="fu">c</span>(<span class="st">&quot;DAX&quot;</span>, <span class="st">&quot;SMI&quot;</span>, <span class="st">&quot;FTSE&quot;</span>)][<span class="sc">-</span><span class="dv">1</span>, ]</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>CAC_covlmc <span class="ot">&lt;-</span> <span class="fu">tune_covlmc</span>(CAC_dts, CAC_covariates, <span class="at">criterion =</span> <span class="st">&quot;AIC&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>CAC_comodel <span class="ot">&lt;-</span> <span class="fu">as_covlmc</span>(CAC_covlmc)</span></code></pre></div>
+<p>Finally, we obtain predictions using
+<code>predict.covlmc()</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>CAC_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(CAC_comodel, CAC_dts, CAC_covariates, <span class="at">final_pred =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p>In this case, the predictions are of rather poor quality:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">table</span>(CAC_pred, CAC_dts)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt;         CAC_dts</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; CAC_pred Down Stay  Up</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt;     Down   40   46  36</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;     Stay  453  625 467</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt;     Up     36   65  91</span></span></code></pre></div>
+<p>This can be easily explained by the large ambiguity of the
+conditional distributions as can be observed by focusing on them rather
+than on predictions:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>CAC_probs <span class="ot">&lt;-</span> <span class="fu">predict</span>(CAC_comodel, CAC_dts, CAC_covariates, <span class="at">final_pred =</span> <span class="cn">FALSE</span>, <span class="at">type =</span> <span class="st">&quot;probs&quot;</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>CAC_probs[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, ]</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt;            Down      Stay        Up</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt;  [1,] 0.2841765 0.3961249 0.3196986</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt;  [2,] 0.2878788 0.4073084 0.3048128</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt;  [3,] 0.2878788 0.4073084 0.3048128</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt;  [4,] 0.2878788 0.4073084 0.3048128</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt;  [5,] 0.2878788 0.4073084 0.3048128</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt;  [6,] 0.2878788 0.4073084 0.3048128</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt;  [7,] 0.2878788 0.4073084 0.3048128</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt;  [8,] 0.2878788 0.4073084 0.3048128</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co">#&gt;  [9,] 0.4248040 0.3124036 0.2627924</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; [10,] 0.3747649 0.4891093 0.1361259</span></span></code></pre></div>
+<p>The Shannon entropies of those conditional distributions are
+generally relatively close to the maximum in this setting, i.e. 1.09861,
+as shown on this graphical illustration</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>entropies <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">entropy =</span> <span class="fu">apply</span>(CAC_probs, <span class="dv">1</span>, \(x) <span class="sc">-</span><span class="fu">sum</span>(x <span class="sc">*</span> <span class="fu">log</span>(x))))</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">ggplot</span>(entropies, <span class="fu">aes</span>(<span class="at">x =</span> entropy)) <span class="sc">+</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="fu">geom_density</span>() <span class="sc">+</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="fu">geom_rug</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="sc">-</span><span class="fu">log</span>(<span class="dv">1</span> <span class="sc">/</span> <span class="dv">3</span>), <span class="at">col =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" />
+This illustrate the fact that (CO)VLMC models are not predictive models
+but rather generative models. They may perform well on predictive tasks
+if the conditional distributions are peaked enough, which corresponds in
+a way to simple predictive cases.</p>
+<p>For example, the case of the sun spots studied above for the VLMC has
+better predictive performances because of the presence of strongly
+peaked distributions (some of them are even deterministic), as shown
+below:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>sun_probs <span class="ot">&lt;-</span> <span class="fu">predict</span>(<span class="fu">as_vlmc</span>(sun_model_tune_aic), sun_activity,</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  <span class="at">final_pred =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">&quot;probs&quot;</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>)</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>sun_entropies <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">entropy =</span> <span class="fu">apply</span>(</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  sun_probs, <span class="dv">1</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  \(x) <span class="sc">-</span><span class="fu">sum</span>(x <span class="sc">*</span> <span class="fu">log</span>(x), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>))</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="fu">ggplot</span>(sun_entropies, <span class="fu">aes</span>(<span class="at">x =</span> entropy)) <span class="sc">+</span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">50</span>) <span class="sc">+</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>  <span class="fu">geom_rug</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="sc">-</span><span class="fu">log</span>(<span class="dv">1</span> <span class="sc">/</span> <span class="dv">2</span>), <span class="at">col =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+<p>This while (CO)VLMC based predictions can be interesting, one will
+generaly obtained more insights about the original time series using
+simulations, as detailed in <code>vignette(&quot;sampling&quot;)</code>.</p>
+</div>
+</div>
+<div id="metrics" class="section level2">
+<h2>Metrics</h2>
+<p>In addition to <code>predict.vlmc()</code> and
+<code>predict.covlmc()</code>, mixvlmc provides a <code>metrics()</code>
+function which computes and reports a collection of classification
+oriented quality metrics computed on the time series (and covariates)
+used to estimate the (CO)VLMC model. Those metrics could be computed
+easily using the <code>predict()</code> functions, but
+<code>metrics()</code> is faster and does not need the original
+data.</p>
+<div id="vlmc-1" class="section level3">
+<h3>VLMC</h3>
+<p>For instance for the sun spots complex AIC model, we obtain</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>sun_metrics <span class="ot">&lt;-</span> <span class="fu">metrics</span>(<span class="fu">as_vlmc</span>(sun_model_tune_aic))</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>sun_metrics</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co">#&gt; VLMC context tree on high, low </span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co">#&gt;  cutoff: 2.306 (quantile: 0.03175)</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co">#&gt;  Number of contexts: 9 </span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co">#&gt;  Maximum context length: 5 </span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co">#&gt;  Confusion matrix: </span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co">#&gt;        high low </span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co">#&gt;   high 119  27  </span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt;   low  27   116 </span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co">#&gt;  Accuracy: 0.8131 </span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co">#&gt;  AUC: 0.9146</span></span></code></pre></div>
+<p>The ROC curve is computed by <code>metrics()</code> (for state space
+of size 2) and can be plotted simply using:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">plot</span>(sun_metrics<span class="sc">$</span>roc)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+</div>
+<div id="covlmc-1" class="section level3">
+<h3>COVLMC</h3>
+<p>Similarly, the CAC model gives:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>CAC_metrics <span class="ot">&lt;-</span> <span class="fu">metrics</span>(CAC_comodel)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>CAC_metrics</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co">#&gt; VLMC with covariate context tree on Down, Stay, Up </span></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a><span class="co">#&gt;  cutoff in quantile scale: 0.01046</span></span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a><span class="co">#&gt;  Number of contexts: 5 </span></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="co">#&gt;  Maximum context length: 2 </span></span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a><span class="co">#&gt;  Confusion matrix: </span></span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a><span class="co">#&gt;        Down Stay Up  </span></span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a><span class="co">#&gt;   Down 40   46   36  </span></span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a><span class="co">#&gt;   Stay 453  625  467 </span></span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a><span class="co">#&gt;   Up   36   65   91  </span></span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a><span class="co">#&gt;  Accuracy: 0.4067 </span></span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a><span class="co">#&gt;  AUC: 0.6451</span></span></code></pre></div>
+<p>When the state space contains three or more states, we report the
+generalized AUC proposed by Hand and Till in <a href="https://doi.org/10.1023/A:1010920819831">A Simple Generalisation
+of the Area Under the ROC Curve for Multiple Class Classification
+Problems</a>.</p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

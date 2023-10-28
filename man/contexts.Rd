@@ -4,47 +4,57 @@
 \alias{contexts}
 \title{Contexts of a context tree}
 \usage{
-contexts(ct, type = c("auto", "list", "data.frame"), reverse = TRUE, ...)
+contexts(ct, sequence = FALSE, reverse = FALSE, ...)
 }
 \arguments{
 \item{ct}{a context tree.}
 
-\item{type}{result type (see details).}
+\item{sequence}{if \code{TRUE} the function returns its results as a \code{data.frame},
+if \code{FALSE} (default) as a list of \code{ctx_node} objects. (see details)}
 
-\item{reverse}{logical (defaults to FALSE). See details.}
+\item{reverse}{logical (defaults to \code{FALSE}). See details.}
 
 \item{...}{additional arguments for the contexts function.}
 }
 \value{
-The list of the contexts represented in this tree or a data.frame
-with more content.
+A list of class \code{contexts} containing the contexts represented in
+this tree (as \code{ctx_node}) or a data.frame.
 }
 \description{
 This function extracts from a context tree a description of all of its
 contexts.
 }
 \details{
-The default behavior consists in returning a list of all the contexts
-contained in the tree (with \code{type="auto"} or \code{type="list"}). When
-\code{type="data.frame"}, the method returns a data.frame whose first column,
-named \code{context}, contains the contexts. Other columns contain context
-specific values which depend on the actual class of the tree and on
-additional parameters. An adapted return type is chosen when type="auto"`.
+The default behaviour consists in returning a list of all the contexts
+contained in the tree using \code{ctx_node} objects (as returned by e.g.
+\code{\link[=find_sequence]{find_sequence()}}) (with \code{type="list"}). The properties of the contexts can
+then be explored using adapted functions such as \code{\link[=counts]{counts()}} and
+\code{\link[=positions]{positions()}}. The result list is of class \code{contexts}. When \code{sequence=TRUE},
+the method returns a data.frame whose first column, named \code{context}, contains
+the contexts as vectors (i.e. the value returned by \code{as_sequence()} applied
+to a \code{ctx_node} object). Other columns contain context specific values which
+depend on the actual class of the tree and on additional parameters. In all
+implementations of \code{contexts()}, setting the additional parameters to any no
+default value leads to a \code{data.frame} result.
 }
 \section{State order in a context}{
  Notice that contexts are given by default
-in the "reverse" order used by the VLMC papers: older values are on the
-right. For instance, the context \code{c(0, 1)} is reported if the sequence 1,
-then 0 appeared in the time series used to build the context tree. Set
-reverse to \code{FALSE} for the reverse convention.
+in the temporal order and not in the "reverse" order used by many VLMC
+research papers: older values are on the left. For instance, the context
+\code{c(1, 0)} is reported if the sequence 0, then 1 appeared in the time series
+used to build the context tree. Set reverse to \code{TRUE} for the reverse
+convention which is somewhat easier to relate to the way the context trees
+are represented by \code{\link[=draw]{draw()}} (i.e. recent values at the top the tree).
 }
 
 \examples{
 dts <- sample(as.factor(c("A", "B", "C")), 100, replace = TRUE)
 dts_tree <- ctx_tree(dts, max_depth = 3, min_size = 5)
 contexts(dts_tree)
-contexts(dts_tree, "data.frame", TRUE)
+contexts(dts_tree, TRUE, TRUE)
 }
 \seealso{
-\code{\link[=contexts.ctx_tree]{contexts.ctx_tree()}}, \code{\link[=contexts.vlmc]{contexts.vlmc()}}, \code{\link[=contexts.covlmc]{contexts.covlmc()}}.
+\code{\link[=find_sequence]{find_sequence()}} and \code{\link[=find_sequence.covlmc]{find_sequence.covlmc()}} for direct access to
+a specific context, and \code{\link[=contexts.ctx_tree]{contexts.ctx_tree()}}, \code{\link[=contexts.vlmc]{contexts.vlmc()}} and
+\code{\link[=contexts.covlmc]{contexts.covlmc()}} for concrete implementations of \code{contexts()}.
 }

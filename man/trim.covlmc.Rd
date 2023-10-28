@@ -26,8 +26,9 @@ for new data, \code{\link[=contexts.covlmc]{contexts.covlmc()}} do not support m
 \code{\link[=simulate.covlmc]{simulate.covlmc()}}, \code{\link[=metrics.covlmc]{metrics.covlmc()}}  and \code{\link[=prune.covlmc]{prune.covlmc()}} cannot be used at all.
 
 Called with \code{keep_model} set to \code{TRUE}, the trimming process is less complete. In
-particular internal models are simplified using \code{\link[butcher:butcher]{butcher::butcher()}}. This saves
-less memory but enables the use of \code{\link[=loglikelihood.covlmc]{loglikelihood.covlmc()}} for new data as
+particular internal models are simplified using \code{\link[butcher:butcher]{butcher::butcher()}} and some
+additional minor reductions. This saves less memory but enables the use of
+\code{\link[=loglikelihood.covlmc]{loglikelihood.covlmc()}} for new data as
 well as the use of \code{\link[=simulate.covlmc]{simulate.covlmc()}}.
 }
 \examples{
@@ -40,4 +41,7 @@ t_m_cov_model <- trim(m_cov, keep_model = TRUE)
 print(object.size(t_m_cov_model), units = "Mb")
 t_m_cov <- trim(m_cov)
 print(object.size(t_m_cov), units = "Mb")
+}
+\seealso{
+\code{\link[=tune_covlmc]{tune_covlmc()}}
 }

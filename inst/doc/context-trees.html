@@ -351,15 +351,20 @@ context.</p>
 <h3>Definition</h3>
 <p>We consider a time series <span class="math inline">\(x=(x_i)_{i\geq
 1}\)</span> with values in a finite set <span class="math inline">\(S\)</span>, its state space. A context <span class="math inline">\(c\)</span> is a finite sequence of elements of
-<span class="math inline">\(S\)</span>, <span class="math inline">\(c=(c_1, \ldots, c_k)\)</span> <em>observed</em> in
+<span class="math inline">\(S\)</span>, <span class="math inline">\(c=(c_k, \ldots, c_1)\)</span> <em>observed</em> in
 <span class="math inline">\(x\)</span>. <span class="math inline">\(c\)</span> is <em>observed</em> in <span class="math inline">\(x\)</span> if there is <span class="math inline">\(t\)</span> such that <span class="math display">\[
 x_{t-1}=c_1, x_{t-2}=c_2, \ldots, x_{t-k}=c_k.
-\]</span> Notice that <span class="math inline">\(c\)</span> is written
+\]</span> Notice that <span class="math inline">\(c\)</span> is numbered
 in a <em>reverse</em> order, in the sense that <span class="math inline">\(c_1\)</span> is the most recent value in <span class="math inline">\(x\)</span> while <span class="math inline">\(c_k\)</span> is the oldest one. Thus the
-sub-sequence observed in <span class="math inline">\(x\)</span> is <span class="math inline">\((c_k, c_{k-1}, \ldots, c_1)\)</span>. We follow
-Bühlmann and Wyner convention.</p>
-<p>For instance, if <span class="math inline">\(S=\{0, 1\}\)</span> and
-<span class="math inline">\(x=(0, 0, 0, 1, 1, 1)\)</span></p>
+sub-sequence observed in <span class="math inline">\(x\)</span>. In
+numerous papers, for instance in the works of Bühlmann and Wyner, the
+convention is to reverse the temporal order and to write <span class="math inline">\(c=(c_1, \ldots, c_k)\)</span>, keeping <span class="math inline">\(c_1\)</span> as the most recent value and <span class="math inline">\(c_k\)</span> as the oldest one. In
+<code>mixvlmc</code> we use the more natural convention of writing
+contexts in temporal order, but many functions offer a
+<code>reverse</code> parameter than can be used to switch to Bühlmann
+and Wyner convention.</p>
+<p>Back to examples, if <span class="math inline">\(S=\{0, 1\}\)</span>
+and <span class="math inline">\(x=(0, 0, 0, 1, 1, 1)\)</span></p>
 <ul>
 <li><span class="math inline">\((0, 0)\)</span> is a context of <span class="math inline">\(x\)</span> with <span class="math inline">\(t=3\)</span> and <span class="math inline">\(t=4\)</span>;</li>
 <li><span class="math inline">\((0, 1, 0)\)</span> is not a context of
@@ -371,9 +376,11 @@ Bühlmann and Wyner convention.</p>
 <p>The contexts of a time series can be represented by a tree. The root
 of the tree stands for the empty context. The children of the root
 represent the contexts of length 1. In general, if a node represents the
-context <span class="math inline">\(c=(c_1, \ldots, c_k)\)</span>, then
-contexts of the form <span class="math inline">\(c&#39;=(c_1, \ldots,
-c_k, c_{k+1})\)</span> are represented by the children of the node.</p>
+context <span class="math inline">\(c=(c_k, \ldots, c_1)\)</span>, then
+contexts of the form <span class="math inline">\(c&#39;=(c_{k+1}, c_k,
+\ldots, c_1)\)</span> are represented by the children of the node.
+Descending in the context tree corresponds to adding to the past of the
+context.</p>
 <p>Let us consider again <span class="math inline">\(x=(0, 0, 0, 1, 1,
 1)\)</span> and all contexts that appear <em>at least twice</em> in
 <span class="math inline">\(x\)</span> (i.e. which are observed for at
@@ -386,14 +393,14 @@ An ASCII art representation of the corresponding context tree is:</p>
 <p>The tree represents 2 size one contexts (<span class="math inline">\((0)\)</span> and <span class="math inline">\((1)\)</span>), the direct children of the root
 (shown as a star <code>*</code>). It represents in addition 1 size 2
 contexts, <span class="math inline">\((0, 0)\)</span>. Notice that for
-instance, <span class="math inline">\((0, 1)\)</span> is not a context
+instance, <span class="math inline">\((1, 0)\)</span> is not a context
 in the tree as the node of context <span class="math inline">\((0)\)</span> has only one child labelled by <span class="math inline">\(0\)</span>.</p>
 </div>
 </div>
 <div id="extracting-contexts-from-a-time-series-in-mixvlmc" class="section level2">
 <h2>Extracting contexts from a time series in mixvlmc</h2>
 <p>Mixvlmc can be used to compute all the contexts of a time series
-using the <code>ctx_tree</code> function/constructor as follows:</p>
+using the <code>ctx_tree()</code> function/constructor as follows:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">library</span>(mixvlmc)</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>x_ctx <span class="ot">&lt;-</span> <span class="fu">ctx_tree</span>(x)</span>
@@ -433,31 +440,32 @@ contexts:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>y_ctx_min_1 <span class="ot">&lt;-</span> <span class="fu">ctx_tree</span>(y, <span class="at">min_size =</span> <span class="dv">1</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>y_ctx_min_1</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; Context tree on a, b, c </span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;  Number of contexts: 602 </span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;  Maximum context length: 10</span></span></code></pre></div>
-<p>If we raise the depth limit, the number of contexts keeps
-increasing:</p>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;  Number of contexts: 4607 </span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;  Maximum context length: 99</span></span></code></pre></div>
+<p>Even if we decrease the depth limit the number of contexts remains
+very large:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>y_ctx_min_1_d_15 <span class="ot">&lt;-</span> <span class="fu">ctx_tree</span>(y, <span class="at">min_size =</span> <span class="dv">1</span>, <span class="at">max_depth =</span> <span class="dv">15</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>y_ctx_min_1_d_15</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; Context tree on a, b, c </span></span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;  Number of contexts: 1037 </span></span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt;  Maximum context length: 15</span></span></code></pre></div>
 <p>Contexts can be extracted from a context tree using the
-<code>contexts</code> function as follows:</p>
+<code>contexts()</code> function as follows:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">contexts</span>(x_ctx)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; [[1]]</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1] 0 0</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [[2]]</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; [[3]]</span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div>
-<p>In general, the raw list of contexts is not very useful and
-<code>contexts</code> can be parametrized to give additional information
-about the contexts. In the simple case of <code>ctx_tree</code>, setting
-the <code>frequency</code> parameter to <code>&quot;total&quot;</code> or
-<code>&quot;detailed&quot;</code> gives access to the distribution of <span class="math inline">\(x_t\)</span> for all the <span class="math inline">\(t\)</span> at which a context appears.</p>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; Contexts:</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;  0, 0</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;  0</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;  1</span></span></code></pre></div>
+<p>In general, the raw list of contexts is not directly useful and one
+should use the node manipulation functions to leverage it (see below). A
+simple approach consists in asking to <code>contexts()</code> a
+<code>data.frame</code> output that will contain additional information
+about the contexts. This is done implicitly when additional parameters
+are given to <code>contexts()</code>. In the simple case of
+<code>ctx_tree</code>, setting the <code>frequency</code> parameter to
+<code>&quot;total&quot;</code> or <code>&quot;detailed&quot;</code> gives access to the
+distribution of <span class="math inline">\(x_t\)</span> for all the
+<span class="math inline">\(t\)</span> at which a context appears.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">contexts</span>(x_ctx, <span class="at">frequency =</span> <span class="st">&quot;total&quot;</span>)</span></code></pre></div>
 <div class="kable-table">
 <table>
@@ -523,6 +531,80 @@ context.</p>
 addition</em> a column for each value in the state space <span class="math inline">\(S\)</span> which contains the distribution of
 <span class="math inline">\(x_t\)</span> for the occurrences of each
 context. For instance in the table above, the context <span class="math inline">\((0, 0)\)</span> appears twice in <span class="math inline">\(x\)</span> and is followed once by <span class="math inline">\(0\)</span> and once by <span class="math inline">\(1\)</span>.</p>
+</div>
+<div id="direct-manipulation-of-nodes" class="section level2">
+<h2>Direct manipulation of nodes</h2>
+<p>Another way to extract information from a context tree, especially
+large ones, it to operate at the node level, using the
+<code>find_sequence()</code> function (or the <code>contexts()</code>
+function). For instance exploring the 4607 contexts obtained above with
+<code>min_size=1</code> is not convenient, but we may be interested by
+e.g. the sequence <code>c(&quot;a&quot;, &quot;a&quot;, &quot;a&quot;)</code>. We look for a
+corresponding node in the tree with</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>node_aaa <span class="ot">&lt;-</span> <span class="fu">find_sequence</span>(y_ctx_min_1, <span class="fu">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;a&quot;</span>, <span class="st">&quot;a&quot;</span>))</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>node_aaa</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; Sequence [T]: a, a, a </span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;  followed by a (3), b (2), c (2)</span></span></code></pre></div>
+<p>As the result is not <code>NULL</code>, we know that the sequence
+appears in the original time series. It is not a context, as shown
+by</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">is_context</span>(node_aaa)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
+<p>In this particular case, it is likely to be caused by longer contexts
+for which <code>c(&quot;a&quot;, &quot;a&quot;, &quot;a&quot;)</code> is a suffix. This can be
+verified by looking at the children of <code>node_aaa</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">children</span>(node_aaa)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; $a</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt; Context [T]: a, a, a, a </span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt;  followed by a (0), b (1), c (2)</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; $b</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; Context [T]: b, a, a, a </span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt;  followed by a (1), b (0), c (0)</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; $c</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; Context [T]: c, a, a, a </span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt;  followed by a (2), b (1), c (0)</span></span></code></pre></div>
+<p>This shows that we have indeed three contexts that all end by
+<code>c(&quot;a&quot;, &quot;a&quot;, &quot;a&quot;)</code>.</p>
+<p>Nodes carry information about the sequences or contexts they
+represent. The number of occurrences of a sequence in the original time
+series is obtained with the <code>counts()</code> function as
+follows:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">counts</span>(node_aaa, <span class="at">frequency =</span> <span class="st">&quot;total&quot;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; [1] 7</span></span></code></pre></div>
+<p>Notice that as with <code>contexts()</code> those occurrences cover
+only positions where the sequence is followed by at least one value. The
+distribution of those values is given by another call to
+<code>counts()</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">counts</span>(node_aaa, <span class="at">frequency =</span> <span class="st">&quot;detailed&quot;</span>)</span></code></pre></div>
+<div class="kable-table">
+<table>
+<thead>
+<tr class="header">
+<th align="right">total</th>
+<th align="right">a</th>
+<th align="right">b</th>
+<th align="right">c</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">7</td>
+<td align="right">3</td>
+<td align="right">2</td>
+<td align="right">2</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>If sequence positions were saved during the construction of the
+context tree, the <code>ctx_node</code> can report them using the
+<code>positions()</code> function:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">positions</span>(node_aaa)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt; [1] 15 25 26 73 74 83 84</span></span></code></pre></div>
+<p>See the documentation of the function for the definition of a
+position.</p>
 </div>
 
 

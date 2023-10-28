@@ -1,30 +1,22 @@
 rec_loglikelihood_covlmc <- function(tree) {
   if (is.null(tree)) {
-    list(ll = 0, df = 0L, nobs = 0L)
+    0
   } else if (is.null(tree$children)) {
     if (is.null(tree$model)) {
-      list(ll = 0, df = 0L, nobs = 0L)
+      0
     } else {
-      list(
-        ll = tree$model$likelihood, df = length(tree$model$coefficients),
-        nobs = as.integer(sum(tree$f_by))
-      )
+      tree$model$likelihood
     }
   } else {
     ## take care of the local model
-    sub_ll <- list(ll = 0, df = 0L, nobs = 0L)
+    sub_ll <- 0
     for (v in seq_along(tree$children)) {
-      ch_ll <- rec_loglikelihood_covlmc(tree$children[[v]])
-      sub_ll$ll <- sub_ll$ll + ch_ll$ll
-      sub_ll$df <- sub_ll$df + ch_ll$df
-      sub_ll$nobs <- sub_ll$nobs + ch_ll$nobs
+      sub_ll <- sub_ll + rec_loglikelihood_covlmc(tree$children[[v]])
     }
     if (is.null(tree[["merged_model"]])) {
       sub_ll
     } else {
-      sub_ll$ll <- sub_ll$ll + tree$merged_model$likelihood
-      sub_ll$df <- sub_ll$df + length(tree$megred_model$coefficients)
-      sub_ll$nobs <- sub_ll$nobs + length(tree$merged_model$data$target)
+      sub_ll <- sub_ll + tree$merged_model$likelihood
       sub_ll
     }
   }
@@ -32,79 +24,136 @@ rec_loglikelihood_covlmc <- function(tree) {
 
 rec_loglikelihood_covlmc_newdata <- function(tree, d, nb_vals, y, cov, verbose = FALSE) {
   if (is.null(tree)) {
-    list(ll = 0, nobs = 0L)
-  } else if (is.null(tree$children)) {
-    if (is.null(tree$model)) {
-      list(ll = 0, nobs = 0L)
-    } else {
-      ## we have a true model
-      glmdata <- prepare_glm(cov, tree$match, tree$model$hsize, y, from = d - tree$model$hsize)
-      res <- list(
-        ll = glm_likelihood(tree$model$model, glmdata$local_mm, glmdata$target),
-        nobs = nrow(glmdata$local_mm)
-      )
-      if (verbose) {
-        print(all.equal(glmdata$target, tree$model$data$target))
-        print(stats::logLik(tree$model$model))
-        print(res$nobs)
-        print(paste(res$ll, tree$model$likelihood))
-        if (tree$model$hsize > 0) {
-          print(utils::head(tree$model$data))
-          print(utils::head(glmdata$local_mm))
-        }
-      }
-      res
-    }
-  } else {
-    ## recursive call
-    sub_ll <- list(ll = 0, nobs = 0L)
+    return(0)
+  }
+  sub_ll <- 0
+  if (!is.null(tree$children)) {
+    ## recursive part
     for (v in seq_along(tree$children)) {
-      ch_ll <- rec_loglikelihood_covlmc_newdata(tree$children[[v]], d + 1, nb_vals, y, cov, verbose)
-      sub_ll$ll <- sub_ll$ll + ch_ll$ll
-      sub_ll$nobs <- sub_ll$nobs + ch_ll$nobs
+      sub_ll <- sub_ll + rec_loglikelihood_covlmc_newdata(tree$children[[v]], d + 1, nb_vals, y, cov, verbose)
     }
-    ## take care of the merged model if there is one
-    if (is.null(tree[["merged_model"]])) {
-      sub_ll
+  }
+  ## local model
+  if (is.null(tree$children) && !is.null(tree$model)) {
+    glmdata <- prepare_glm(cov, tree$match, tree$model$hsize, y, from = d - tree$model$hsize)
+    if (length(glmdata$target) > 0) {
+      res <- glm_likelihood(tree$model$model, glmdata$local_mm, glmdata$target)
     } else {
-      ## we need to find the matched data
-      mm_match <- tree$match
-      non_merged <- setdiff(seq_along(tree$children), tree$merged)
-      if (verbose) {
-        print(paste("Removing", non_merged))
+      res <- 0
+    }
+    if (verbose) { # nocov start
+      print("Leaf")
+      print(all.equal(glmdata$target, tree$model$data$target))
+      print(stats::logLik(tree$model$model))
+      print(paste(res, tree$model$likelihood))
+      if (tree$model$hsize > 0) {
+        print(utils::head(tree$model$data))
+        print(utils::head(glmdata$local_mm))
       }
-      for (v in non_merged) {
-        if (verbose) {
-          print(tree$children[[v]]$match)
-        }
-        mm_match <- setdiff(mm_match, 1 + tree$children[[v]]$match)
+      if (!isTRUE(all.equal(res, tree$model$likelihood))) {
+        print("not the same likelihoods")
       }
-      if (verbose) {
-        print(mm_match)
-      }
+    } # nocov end
+    ## not recursive part, direct result
+    return(res)
+  }
+  ## take care of the merged model if there is one
+  if (!is.null(tree[["merged_model"]])) {
+    ## we need to find the matched data
+    mm_match <- c()
+    if (verbose) { # nocov start
+      print("Merged model")
+      print(paste("Keeping", paste(tree$merged, collapse = " ")))
+    } # nocov end
+    for (v in tree$merged) {
+      if (verbose) { # nocov start
+        print(1 + tree$children[[v]]$match)
+      } # nocov end
+      mm_match <- c(mm_match, 1 + tree$children[[v]]$match)
+    }
+    if (verbose) { # nocov start
+      print(mm_match)
+    } # nocov end
+    if (length(mm_match) > 0) {
       ## prepare the data
       glmdata <- prepare_glm(cov, mm_match, tree$merged_model$hsize, y, from = d - tree$merged_model$hsize)
-      if (verbose) {
+      if (verbose) { # nocov start
         print(utils::head(glmdata$local_mm))
         print(utils::head(tree$merged_model$data$local_mm))
         print(length(mm_match))
         print(nrow(tree$merged_model$data$local_mm))
-      }
+        if (length(mm_match) != nrow(tree$merged_model$data$local_mm)) {
+          print("not the same size")
+        }
+      } # nocov end
       ## update the values
-      sub_ll$ll <- sub_ll$ll + glm_likelihood(tree$merged_model$model, glmdata$local_mm, glmdata$target)
-      sub_ll$nobs <- sub_ll$nobs + nrow(glmdata$local_mm)
-      sub_ll
+      if (length(glmdata$target) > 0) {
+        merged_ll <- glm_likelihood(tree$merged_model$model, glmdata$local_mm, glmdata$target)
+        sub_ll <- sub_ll + merged_ll
+        if (verbose) { # nocov start
+          print(paste(merged_ll, tree$merged_model$likelihood))
+        } # nocov end
+      }
     }
   }
+  ## we take care finally of the extended model if there is one
+  if (!is.null(tree[["extended_model"]])) {
+    ## check for an extended model
+    ## we need to find the matched data
+    if (d == 0) {
+      ## root
+      ## match only the first data point
+      glmdata <- prepare_glm(cov, 0, 0, y, from = 0)
+      e_ll <- glm_likelihood(tree$extended_model$model, glmdata$local_mm, glmdata$target)
+      if (verbose) { # nocov start
+        cat("root", e_ll, "\n")
+      } # nocov end
+    } else {
+      mm_match <- tree$match
+      for (v in seq_along(tree$children)) {
+        sub_match <- tree$children[[v]]$match + 1
+        mm_match <- setdiff(mm_match, sub_match)
+      }
+      if (length(mm_match > 0)) {
+        glmdata <- prepare_glm(cov, mm_match, tree$extended_model$hsize, y,
+          from = d - tree$extended_model$hsize
+        )
+        e_ll <- glm_likelihood(tree$extended_model$model, glmdata$local_mm, glmdata$target)
+      } else {
+        e_ll <- 0
+      }
+    }
+    sub_ll <- sub_ll + e_ll
+  }
+  sub_ll
 }
 
-
+#' Log-Likelihood of a VLMC with covariates
+#'
+#' This function evaluates the log-likelihood of a VLMC with covariates
+#' fitted on a discrete time series.
+#'
+#' @param object the covlmc representation.
+#' @inherit logLik.vlmc
+#' @examples
+#'
+#' ## Likelihood for a fitted VLMC with covariates.
+#' pc <- powerconsumption[powerconsumption$week == 5, ]
+#' breaks <- c(
+#'   0,
+#'   median(powerconsumption$active_power, na.rm = TRUE),
+#'   max(powerconsumption$active_power, na.rm = TRUE)
+#' )
+#' labels <- c(0, 1)
+#' dts <- cut(pc$active_power, breaks = breaks, labels = labels)
+#' dts_cov <- data.frame(day_night = (pc$hour >= 7 & pc$hour <= 17))
+#' m_cov <- covlmc(dts, dts_cov, min_size = 5)
+#' ll <- logLik(m_cov)
+#' attributes(ll)
+#'
 #' @export
-logLik.covlmc <- function(object, ...) {
-  pre_res <- rec_loglikelihood_covlmc(object)
-  ll <- pre_res$ll
-  attr(ll, "df") <- pre_res$df
-  attr(ll, "nobs") <- pre_res$nobs
+logLik.covlmc <- function(object, initial = c("truncated", "specific", "extended"), ...) {
+  ll <- loglikelihood(object, initial = initial)
   class(ll) <- "logLik"
   ll
 }
@@ -115,20 +164,15 @@ logLik.covlmc <- function(object, ...) {
 #' on a discrete time series. When the optional arguments `newdata` is
 #' provided, the function evaluates instead the log-likelihood for this (new)
 #' discrete time series on the new covariates which must be provided through the
-#' newcov parameter.
-#' @details
-#' For VLMC with covariables, the method `loglikelihood.covlmc` will be used. For VLMC objects, `loglikelihood.vlmc`
-#' will instead be called. For more informations on `loglikelihood` methods, use `methods(loglikelihood)` and their associated documentation.
+#' `newcov` parameter.
 #'
-#' @param vlmc the vlmc representation.
-#' @param newdata an optional discrete time series.
+#' The definition of the likelihood function depends on the value of the
+#' `initial` parameters, see the section below as well as the dedicated
+#' vignette: `vignette("likelihood", package = "mixvlmc")`.
+#'
+#' @param vlmc the covlmc representation.
 #' @param newcov an optional data frame with the new values for the covariates.
-#' @param ... additional parameters for loglikelihood.
-#'
-#' @returns the log-likelihood of the VLMC with a nobs attribute that accounts
-#'   for the number of data included in the likelihood calculation.
-#' @seealso [stats::logLik]
-#'
+#' @inherit loglikelihood
 #' @examples
 #'
 #' ## Likelihood for a fitted VLMC with covariates.
@@ -156,24 +200,61 @@ logLik.covlmc <- function(object, ...) {
 #' attributes(ll_new)
 #'
 #' @export
-loglikelihood.covlmc <- function(vlmc, newdata, newcov, ...) {
+loglikelihood.covlmc <- function(vlmc, newdata, initial = c("truncated", "specific", "extended"),
+                                 ignore, newcov, ...) {
+  initial <- match.arg(initial)
+  if (missing(ignore)) {
+    if (initial == "truncated") {
+      ignore <- depth(vlmc)
+    } else {
+      ignore <- 0
+    }
+  } else if (ignore < depth(vlmc) && initial == "truncated") {
+    stop("Cannot ignore less than ", depth(vlmc), " initial observations with `truncated` likelihood")
+  }
   if (missing(newdata)) {
+    if (ignore > depth(vlmc)) {
+      stop("Cannot ignore more than ", depth(vlmc), " initial observations without newdata")
+    }
     assertthat::assert_that(missing(newcov),
       msg = "Cannot specify new covariate values (newcov) without new data (newdata)"
     )
-    pre_res <- rec_loglikelihood_covlmc(vlmc)
+    data_size <- vlmc$data_size
+    ## in this case, we have directly the truncated/specific LL
+    res <- rec_loglikelihood_covlmc(vlmc)
+    ignore_counts <- ignore
+    if (initial == "extended") {
+      if (depth(vlmc) > 0) {
+        ## add the full extended match
+        res <- res + vlmc$extended_ll
+      }
+      if (ignore > 0) {
+        ## remove the ignored data
+        icovlmc <- match_ctx(vlmc, vlmc$ix[1:min(ignore, length(vlmc$ix))])
+        delta_res <- rec_loglikelihood_covlmc_newdata(
+          icovlmc, 0, length(vlmc$vals),
+          vlmc$ix[1:min(ignore, length(vlmc$ix))],
+          vlmc$icov[1:min(ignore, length(vlmc$ix)), , drop = FALSE]
+        )
+        res <- res - delta_res
+      }
+    }
   } else {
     if (isTRUE(vlmc$trimmed == "full")) {
       stop("loglikelihood calculation for new data is not supported by fully trimmed covlmc")
     }
-    assertthat::assert_that((typeof(newdata) == typeof(vlmc$vals)) && (class(newdata) == class(vlmc$vals)),
+    assertthat::assert_that((typeof(newdata) == typeof(vlmc$vals)) && methods::is(newdata, class(vlmc$vals)),
       msg = "newdata is not compatible with the model state space"
     )
     assertthat::assert_that(!missing(newcov),
       msg = "Need new covariate values (newcov) with new data (newdata)"
     )
+    if (ignore >= length(newdata)) {
+      stop("Cannot ignore more data than the available ones")
+    }
     assertthat::assert_that(is.data.frame(newcov))
     assertthat::assert_that(nrow(newcov) == length(newdata))
+    data_size <- length(newdata)
     newcov <- validate_covariate(vlmc, newcov)
     nx <- to_dts(newdata, vlmc$vals)
     ncovlmc <- match_ctx(vlmc, nx$ix, keep_match = TRUE)
@@ -182,9 +263,30 @@ loglikelihood.covlmc <- function(vlmc, newdata, newcov, ...) {
     } else {
       newdata <- nx$ix
     }
-    pre_res <- rec_loglikelihood_covlmc_newdata(ncovlmc, 0, length(vlmc$vals), newdata, newcov)
+    ignore_counts <- ignore
+    if (initial == "specific" && ignore < depth(vlmc)) {
+      ignore <- depth(vlmc)
+    }
+    res <- rec_loglikelihood_covlmc_newdata(ncovlmc, 0, length(vlmc$vals), newdata, newcov)
+    if (ignore > 0) {
+      icovlmc <- match_ctx(vlmc, nx$ix[1:min(ignore, length(newdata))], keep_match = TRUE)
+      delta_res <- rec_loglikelihood_covlmc_newdata(
+        icovlmc, 0, length(vlmc$vals),
+        newdata[1:min(ignore, length(newdata))],
+        newcov[1:min(ignore, length(newdata)), , drop = FALSE]
+      )
+      res <- res - delta_res
+    }
   }
-  res <- pre_res$ll
-  attr(res, "nobs") <- pre_res$nobs
-  res
+  attr(res, "nobs") <- max(0, data_size - ignore_counts)
+  max_depth <- depth(vlmc)
+  if (initial == "truncated") {
+    attr(res, "df") <- count_parameters(vlmc, FALSE)
+  } else if (initial == "specific") {
+    attr(res, "df") <- count_parameters(vlmc, FALSE) + max_depth
+  } else {
+    attr(res, "df") <- count_parameters(vlmc, TRUE)
+  }
+  attr(res, "initial") <- initial
+  structure(res, class = c("logLikMixVLMC", "logLik"))
 }

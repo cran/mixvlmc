@@ -8,15 +8,15 @@ covlmc(
   x,
   covariate,
   alpha = 0.05,
-  min_size = 5,
-  max_depth = 100,
+  min_size = 5L,
+  max_depth = 100L,
   keep_data = TRUE,
   control = covlmc_control(...),
   ...
 )
 }
 \arguments{
-\item{x}{a discrete time series; can be numeric, character or factor.}
+\item{x}{a discrete time series; can be numeric, character, factor or logical.}
 
 \item{covariate}{a data frame of covariates.}
 

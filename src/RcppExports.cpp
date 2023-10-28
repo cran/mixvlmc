@@ -33,24 +33,68 @@ BEGIN_RCPP
 END_RCPP
 }
 // forward_match_all_ctx_counts
-List forward_match_all_ctx_counts(NumericVector x, int nb_vals, int depth, Nullable<NumericVector> nv_from);
+List forward_match_all_ctx_counts(IntegerVector x, int nb_vals, int depth, Nullable<IntegerVector> nv_from);
 RcppExport SEXP _mixvlmc_forward_match_all_ctx_counts(SEXP xSEXP, SEXP nb_valsSEXP, SEXP depthSEXP, SEXP nv_fromSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type nb_vals(nb_valsSEXP);
     Rcpp::traits::input_parameter< int >::type depth(depthSEXP);
-    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type nv_from(nv_fromSEXP);
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type nv_from(nv_fromSEXP);
     rcpp_result_gen = Rcpp::wrap(forward_match_all_ctx_counts(x, nb_vals, depth, nv_from));
     return rcpp_result_gen;
 END_RCPP
 }
+// kl_crit
+double kl_crit(IntegerVector p, IntegerVector q);
+RcppExport SEXP _mixvlmc_kl_crit(SEXP pSEXP, SEXP qSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(kl_crit(p, q));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mixvlmc_sample
+IntegerVector mixvlmc_sample(IntegerVector p, int n);
+RcppExport SEXP _mixvlmc_mixvlmc_sample(SEXP pSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(mixvlmc_sample(p, n));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mixvlmc_sample2
+IntegerVector mixvlmc_sample2(IntegerVector p, int n);
+RcppExport SEXP _mixvlmc_mixvlmc_sample2(SEXP pSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(mixvlmc_sample2(p, n));
+    return rcpp_result_gen;
+END_RCPP
+}
+
+RcppExport SEXP extptr_is_null_(void *);
+RcppExport SEXP _rcpp_module_boot_suffixtree();
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mixvlmc_after", (DL_FUNC) &_mixvlmc_after, 1},
     {"_mixvlmc_before", (DL_FUNC) &_mixvlmc_before, 1},
     {"_mixvlmc_forward_match_all_ctx_counts", (DL_FUNC) &_mixvlmc_forward_match_all_ctx_counts, 4},
+    {"_mixvlmc_kl_crit", (DL_FUNC) &_mixvlmc_kl_crit, 2},
+    {"_mixvlmc_mixvlmc_sample", (DL_FUNC) &_mixvlmc_mixvlmc_sample, 2},
+    {"_mixvlmc_mixvlmc_sample2", (DL_FUNC) &_mixvlmc_mixvlmc_sample2, 2},
+    {"_rcpp_module_boot_suffixtree", (DL_FUNC) &_rcpp_module_boot_suffixtree, 0},
+    {"extptr_is_null_", (DL_FUNC) &extptr_is_null_, 1},
     {NULL, NULL, 0}
 };
 

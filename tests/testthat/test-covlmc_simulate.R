@@ -17,7 +17,10 @@ test_that("covlmc simulation generates a consistent sample", {
     withr::local_options(mixvlmc.predictive = engine)
     model <- covlmc(x, df_y, alpha = 1e-8)
     xs <- simulate(model, 250, covariate = new_cov, seed = 1)
+    my_seed <- 1
+    attr(my_seed, "kind") <- as.list(RNGkind())
     expect_equal(length(xs), 250)
+    expect_identical(attr(xs, "seed"), my_seed)
     expect_identical(sort(unique(xs)), states(model))
   }
 })
@@ -49,8 +52,10 @@ test_that("covlmc simulates uses correctly the initial values", {
   new_cov <- df_y[sample(1:nrow(df_y), 250, replace = TRUE), ]
   model <- covlmc(x, df_y, alpha = 1e-8)
   init <- sample(states(model), 15, replace = TRUE)
+  rng <- .Random.seed
   xs <- simulate(model, 250, covariate = new_cov, init = init)
   expect_identical(xs[1:length(init)], init)
+  expect_identical(attr(xs, "seed"), rng)
 })
 
 test_that("covlmc simulate detects unadapted init values", {
@@ -99,4 +104,13 @@ test_that("covlmc simulate detects new levels in factors", {
   expect_error(simulate(model, 100, covariate = new_cov), regexp = "Factor y has new level 5")
   new_cov$y[2] <- 6
   expect_error(simulate(model, 100, covariate = new_cov), regexp = "Factor y has new levels 5, 6")
+})
+
+test_that("covlmc simulate works correctly with degenerate models", {
+  d_model <- build_degenerate_elec_model(TRUE)
+  expect_no_error(result <- simulate(d_model$model,
+    nsim = nrow(d_model$new_cov),
+    covariate = d_model$new_cov, seed = 0
+  ))
+  expect_equal(length(result), nrow(d_model$new_cov))
 })

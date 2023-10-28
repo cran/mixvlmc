@@ -9,7 +9,7 @@ node_fit_glm_full_rank_with_data <- function(local_mm, d, target, dim_cov, nb_va
   if (nrow(local_mm) > 0) {
     local_glm <- fit_glm(target, local_mm, nb_vals, control)
     while (is_glm_low_rank(local_glm)) {
-      d <- d - 1
+      d <- d - 1L
       local_mm <- local_mm[, -seq(ncol(local_mm), by = -1, length.out = dim_cov), drop = FALSE]
       local_glm <- fit_glm(target, local_mm, nb_vals, control)
     }
@@ -72,13 +72,13 @@ node_fit_glm_with_data <- function(local_mm, d, target, dim_cov, alpha, nb_vals,
       h0mm <- local_mm[, -seq(ncol(local_mm), by = -1, length.out = dim_cov), drop = FALSE]
       H0_full_rank_model <- node_fit_glm_full_rank_with_data(
         h0mm,
-        d - 1, target,
+        d - 1L, target,
         dim_cov, nb_vals, control
       )
       full_rank_model$H0 <- FALSE
       H0_full_rank_model$H0 <- TRUE
       lambda <- 2 * (full_rank_model$likelihood - H0_full_rank_model$likelihood)
-      df <- (full_rank_model$hsize - H0_full_rank_model$hsize) * dim_cov * (nb_vals - 1)
+      df <- (full_rank_model$hsize - H0_full_rank_model$hsize) * dim_cov * (nb_vals - 1L)
       p_value <-
         stats::pchisq(as.numeric(lambda), df = df, lower.tail = FALSE)
       if (is.na(p_value)) {
@@ -124,9 +124,9 @@ node_prune_model <- function(model, cov_dim, nb_vals, alpha, keep_data = FALSE, 
     p_value <- NA
     hsize <- model$hsize
     for (k in 1:nb) {
-      if (verbose) {
+      if (verbose) { # nocov start
         print(paste("node_prune_model", k))
-      }
+      } # nocov end
       h0mm <- local_mm[, -seq(ncol(local_mm), by = -1, length.out = cov_dim * k), drop = FALSE]
       H0_local_glm <- fit_glm(target, h0mm, nb_vals, control)
       if (is_glm_low_rank(H0_local_glm)) {
@@ -145,12 +145,12 @@ node_prune_model <- function(model, cov_dim, nb_vals, alpha, keep_data = FALSE, 
         if (keep_data) {
           current_data <- list(local_mm = h0mm, target = target)
         }
-        hsize <- hsize - 1
+        hsize <- hsize - 1L
       } else {
         ## H0 is rejected, we break the loop
-        if (verbose) {
+        if (verbose) { # nocov start
           print("rejecting H0")
-        }
+        } # nocov end
         ## we need to propagate the p-value
         if (is.null(current_model)) {
           model$p_value <- p_value
@@ -209,63 +209,63 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
           } else if (nb_vals == 2) {
             stop("internal error in ctx_free_fit_glm: missing model with assume_model = TRUE")
           }
-          if (verbose) {
+          if (verbose) { # nocov start
             print("model recomputation is needed")
-          }
+          } # nocov end
         }
         ## let's compute the local model and return it
         ## prunable is true as there is no sub tree
-        if (verbose) {
+        if (verbose) { # nocov start
           print(paste(ctx, collapse = " "))
           print(paste("call to glm with d=", d, sep = ""))
-        }
+        } # nocov end
         res <- list(
           model = node_fit_glm(tree$match, d, y, covariate, alpha, nb_vals, control = control),
           match = tree$match,
           f_by = tree$f_by
         )
         res$prunable <- TRUE
-        if (verbose) {
+        if (verbose) { # nocov start
           print(res$model$hsize)
-        }
+        } # nocov end
         res
       } else {
         ## the recursive part
         ## let's get the models
         submodels <-
           vector(mode = "list", length = length(tree$children))
-        nb_models <- 0
-        nb_children <- 0
-        nb_rejected <- 0
-        nb_prunable <- 0
-        max_hsize <- 0
+        nb_models <- 0L
+        nb_children <- 0L
+        nb_rejected <- 0L
+        nb_prunable <- 0L
+        max_hsize <- 0L
         pr_candidates <- c()
         ll_H0 <- 0
         for (v in seq_along(tree$children)) {
           if (ctx_tree_exists(tree$children[[v]])) {
-            nb_children <- nb_children + 1
+            nb_children <- nb_children + 1L
             submodels[[v]] <-
-              recurse_ctx_tree_fit_glm(tree$children[[v]], c(ctx, v), d + 1, y, covariate)
+              recurse_ctx_tree_fit_glm(tree$children[[v]], c(ctx, v), d + 1L, y, covariate)
             if (!is.null(submodels[[v]][["model"]])) {
-              nb_models <- nb_models + 1
+              nb_models <- nb_models + 1L
               prunable <- submodels[[v]][["prunable"]]
               if (isTRUE(prunable)) {
                 if (assume_model) {
-                  if (submodels[[v]][["model"]]$hsize == d + 1) {
-                    nb_rejected <- nb_rejected + 1
+                  if (submodels[[v]][["model"]]$hsize == d + 1L) {
+                    nb_rejected <- nb_rejected + 1L
                   } else {
                     pr_candidates <- c(pr_candidates, v)
-                    nb_prunable <- nb_prunable + 1
+                    nb_prunable <- nb_prunable + 1L
                     ll_H0 <-
                       ll_H0 + submodels[[v]][["model"]]$likelihood
                     max_hsize <- max(max_hsize, submodels[[v]][["model"]]$hsize)
                   }
                 } else {
                   if (!submodels[[v]][["model"]]$H0) {
-                    nb_rejected <- nb_rejected + 1
+                    nb_rejected <- nb_rejected + 1L
                   } else {
                     pr_candidates <- c(pr_candidates, v)
-                    nb_prunable <- nb_prunable + 1
+                    nb_prunable <- nb_prunable + 1L
                     ll_H0 <-
                       ll_H0 + submodels[[v]][["model"]]$likelihood
                     max_hsize <- max(max_hsize, submodels[[v]][["model"]]$hsize)
@@ -275,12 +275,12 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
             }
           }
         }
-        if (verbose) {
+        if (verbose) { # nocov start
           print(paste(
             "children:", nb_children, "models:", nb_models,
             "prunable:", nb_prunable, "rejected:", nb_rejected
           ))
-        }
+        } # nocov end
         ## we have several different possible situations, based on the assumption
         ## that the tree is full
         ## 1) at least one H0 is rejected
@@ -316,17 +316,17 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
           if (!is.null(tree[["cache"]]) && !is.null(tree[["cache"]][["model"]])) {
             local_model <- tree[["cache"]][["model"]]
             p_value <- tree[["cache"]][["p_value"]]
-            if (verbose) {
+            if (verbose) { # nocov start
               print("Reusing cached model")
-            }
+            } # nocov end
           } else {
-            if (verbose) {
+            if (verbose) { # nocov start
               print(paste("fitting a local model (of full rank) with hsize", max_hsize, "at depth", d))
-            }
+            } # nocov end
             local_model <- node_fit_glm(tree$match, max_hsize, y, covariate, alpha, nb_vals, return_all = TRUE, control, d - max_hsize)
-            if (verbose) {
+            if (verbose) { # nocov start
               print(paste(local_model$H1_model$H0, local_model$H1_model$hsize))
-            }
+            } # nocov end
           }
         }
         if (need_merged_model) {
@@ -334,20 +334,20 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
           if (!is.null(tree[["cache"]]) && !is.null(tree[["cache"]][["merged_model"]])) {
             local_model <- tree[["cache"]][["merged_model"]]
             p_value <- tree[["cache"]][["p_value"]]
-            if (verbose) {
+            if (verbose) { # nocov start
               print("Reusing cached model")
-            }
+            } # nocov end
           } else {
-            if (verbose) {
+            if (verbose) { # nocov start
               print(paste("fitting a merged model for:", paste(pr_candidates, collapse = " ")))
-            }
+            } # nocov end
             ## prepare the data set
             ## we need to reextract the data as models can use different history sizes
             ## shift the index by one to account for the reduced history
-            full_index <- 1 + unlist(lapply(submodels[pr_candidates], function(x) x$match))
-            if (verbose) {
+            full_index <- 1L + unlist(lapply(submodels[pr_candidates], function(x) x$match))
+            if (verbose) { # nocov start
               print(paste("call to glm with d=", d, sep = ""))
-            }
+            } # nocov end
             local_model <- node_fit_glm(full_index, max_hsize, y, covariate, alpha, nb_vals, return_all = TRUE, control, d - max_hsize)
           }
         }
@@ -371,26 +371,26 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
               actual_model <- local_model$H1_model
             }
           }
-          local_df <- (1 + ncol(covariate) * actual_model$hsize) * (nb_vals - 1)
-          sub_df <- 0
+          local_df <- (1L + ncol(covariate) * actual_model$hsize) * (nb_vals - 1L)
+          sub_df <- 0L
           for (v in pr_candidates) {
-            sub_df <- sub_df + (1 + ncol(covariate) * submodels[[v]][["model"]]$hsize) * (nb_vals - 1)
-            if (verbose) {
+            sub_df <- sub_df + (1L + ncol(covariate) * submodels[[v]][["model"]]$hsize) * (nb_vals - 1L)
+            if (verbose) { # nocov start
               print(paste(v, submodels[[v]][["model"]]$hsize, actual_model$hsize))
-            }
+            } # nocov end
             if (submodels[[v]][["model"]]$hsize == actual_model$hsize) {
               local_data <- submodels[[v]][["model"]]$data
             } else {
-              local_data <- prepare_glm(covariate, 1 + submodels[[v]]$match, max_hsize, y, d - max_hsize)
-              if (verbose) {
+              local_data <- prepare_glm(covariate, 1L + submodels[[v]]$match, actual_model$hsize, y, d - actual_model$hsize)
+              if (verbose) { # nocov start
                 print("preparing local data")
                 print(paste(ctx, collapse = ", "))
                 for (tmp in 1:5) {
-                  print(y[(tree$match[tmp] + 1):(tree$match[tmp] + d + 1)])
-                  print(y[(submodels[[v]]$match[tmp] + 1):(submodels[[v]]$match[tmp] + d + 1)])
+                  print(y[(tree$match[tmp] + 1L):(tree$match[tmp] + d + 1L)])
+                  print(y[(submodels[[v]]$match[tmp] + 1L):(submodels[[v]]$match[tmp] + d + 1L)])
                   print("")
                 }
-              }
+              } # nocov end
             }
             ll_model_H0_sub <- glm_likelihood(actual_model$model, local_data$local_mm, local_data$target)
             if (is.na(ll_model_H0_sub)) {
@@ -400,9 +400,9 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
             ll_model_H0 <- ll_model_H0 + ll_model_H0_sub
             ll_H0 <- ll_H0 + submodels[[v]][["model"]]$likelihood
           }
-          if (verbose) {
+          if (verbose) { # nocov start
             print(paste("# of parameters", local_df, sub_df))
-          }
+          } # nocov end
           lambda <- 2 * (ll_H0 - ll_model_H0)
           p_value <- stats::pchisq(as.numeric(lambda),
             df = sub_df - local_df,
@@ -415,17 +415,17 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
               print(submodels[[v]]$model$model)
             }
           }
-          if (verbose) {
+          if (verbose) { # nocov start
             print(paste(lambda, p_value))
-          }
+          } # nocov end
         }
         ## let prepare first the children to keep
         if (need_local_model) {
           if (!is.na(p_value) && p_value > alpha) {
             ## we remove the prunable subtrees all together
-            if (verbose) {
+            if (verbose) { # nocov start
               print("pruning the subtree")
-            }
+            } # nocov end
             if (is.na(local_model$p_value)) {
               result$model <- local_model$H0_model
             } else {
@@ -437,9 +437,9 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
               result$model$p_value <- local_model$p_value
             }
             result$prunable <- TRUE
-            if (verbose) {
+            if (verbose) { # nocov start
               print(result$model$model)
-            }
+            } # nocov end
           } else {
             ## we throw away the local model and keep the children
             result$children <- submodels
@@ -453,9 +453,9 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
           result$prunable <- FALSE
           if (!is.na(p_value) && p_value > alpha) {
             ## we merge the models
-            if (verbose) {
+            if (verbose) { # nocov start
               print("merging sub models")
-            }
+            } # nocov end
             for (v in pr_candidates) {
               submodels[[v]][["model"]] <- NULL
             }
@@ -487,9 +487,9 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
         ## then we need to back prune each model
         if (is.null(result$merged_model)) {
           if (!is.null(result$children)) {
-            if (verbose) {
+            if (verbose) { # nocov start
               print(paste("Trying to prune covariables", paste(pr_candidates, collapse = " ")))
-            }
+            } # nocov end
             for (v in pr_candidates) {
               result$children[[v]][["model"]] <-
                 node_prune_model(result$children[[v]][["model"]], ncol(covariate), nb_vals, alpha, keep_local_data, control)
@@ -497,16 +497,38 @@ ctx_tree_fit_glm <- function(tree, y, covariate, alpha, control, assume_model = 
           }
         } else {
           if (result$merged_model$H0) {
-            if (verbose) {
+            if (verbose) { # nocov start
               print("Trying to prune the merged model covariables")
-            }
+            } # nocov end
             result$merged_model <- node_prune_model(result$merged_model, ncol(covariate), nb_vals, alpha, keep_local_data, control)
+          }
+        }
+        ## prepare a local model for extended context if needed
+        if (is.null(result[["model"]])) {
+          if (!need_local_model || need_merged_model) {
+            ## no luck
+            if (verbose) { # nocov start
+              print("fitting model for extended contexts")
+            } # nocov end
+            local_model <- node_fit_glm(tree$match, max_hsize, y, covariate, alpha, nb_vals, return_all = TRUE, control, d - max_hsize)
+            if (verbose) { # nocov start
+              print(paste(local_model$H1_model$H0, local_model$H1_model$hsize))
+            } # nocov end
+          }
+          if (is.na(local_model$p_value)) {
+            result[["extended_model"]] <- local_model$H0_model
+          } else {
+            if (local_model$p_value > alpha) {
+              result[["extended_model"]] <- local_model$H0_model
+            } else {
+              result[["extended_model"]] <- local_model$H1_model
+            }
           }
         }
         result
       }
     }
-  result <- recurse_ctx_tree_fit_glm(tree, c(), 0, y, covariate)
+  result <- recurse_ctx_tree_fit_glm(tree, c(), 0L, y, covariate)
   result$vals <- tree$vals
   result
 }
@@ -558,7 +580,7 @@ covlmc_control <- function(pseudo_obs = 1) {
 #' This function fits a  Variable Length Markov Chain with covariates (coVLMC)
 #' to a discrete time series coupled with a time series of covariates.
 #'
-#' @param x a discrete time series; can be numeric, character or factor.
+#' @param x a discrete time series; can be numeric, character, factor or logical.
 #' @param covariate a data frame of covariates.
 #' @param alpha number in (0,1) (default: 0.05) cut off value in the pruning
 #'   phase (in quantile scale).
@@ -633,9 +655,12 @@ covlmc_control <- function(pseudo_obs = 1) {
 #' )
 #' draw(m_cov_nnet)
 #' @seealso [cutoff.covlmc()] and [prune.covlmc()] for post-pruning.
-covlmc <- function(x, covariate, alpha = 0.05, min_size = 5, max_depth = 100, keep_data = TRUE, control = covlmc_control(...), ...) {
+covlmc <- function(x, covariate, alpha = 0.05, min_size = 5L, max_depth = 100L, keep_data = TRUE, control = covlmc_control(...), ...) {
   assertthat::assert_that(is.data.frame(covariate))
   assertthat::assert_that(nrow(covariate) == length(x))
+  if (is.null(alpha) || !is.numeric(alpha) || alpha <= 0 || alpha > 1) {
+    stop("the alpha parameter must be in (0, 1]")
+  }
   # data conversion
   nx <- to_dts(x)
   ix <- nx$ix
@@ -652,7 +677,7 @@ covlmc <- function(x, covariate, alpha = 0.05, min_size = 5, max_depth = 100, ke
   ## of grow_ctx_tree is to multiply min_size by 1+depth*covsize in order to
   ## work without modification or test is covsize==0
   ctx_tree <- grow_ctx_tree(ix, vals,
-    min_size = min_size * (length(vals) - 1), max_depth = max_depth,
+    min_size = min_size * (length(vals) - 1L), max_depth = max_depth,
     covsize = desc$cov_size, keep_match = TRUE, all_children = TRUE
   )
   if (length(vals) > 2) {
@@ -671,9 +696,23 @@ covlmc <- function(x, covariate, alpha = 0.05, min_size = 5, max_depth = 100, ke
   pre_result$control <- control
   pre_result$cov_desc <- cov_desc
   pre_result$max_depth <- ctx_tree$max_depth
+  pre_result$data_size <- length(x)
   if (keep_data) {
     pre_result$x <- x
     pre_result$covariate <- covariate
+  }
+  ## prepare for loglikelihoodcalculation
+  the_depth <- depth(pre_result)
+  if (the_depth > 0) {
+    pre_result$iix <- ix[1:min(the_depth, length(x))]
+    pre_result$ix <- x[1:min(the_depth, length(x))]
+    pre_result$icov <- covariate[1:min(the_depth, length(x)), , drop = FALSE]
+    ## precompute the likelihood to enable trimming
+    icovlmc <- match_ctx(pre_result, pre_result$iix, keep_match = TRUE)
+    pre_result$extended_ll <- rec_loglikelihood_covlmc_newdata(
+      icovlmc, 0, length(pre_result$vals),
+      pre_result$ix, pre_result$icov
+    )
   }
   pre_result
 }
@@ -705,34 +744,48 @@ assertthat::on_failure(is_covlmc) <- function(call, env) {
 }
 
 
-#' Cutoff values for pruning the context tree of a VLMC with covariates
+#' Cut off values for pruning the context tree of a VLMC with covariates
 #'
-#' This function returns all the cutoff values that should induce a pruning of
+#' This function returns all the cut off values that should induce a pruning of
 #' the context tree of a VLMC with covariates.
 #'
-#' Notice that the list of cutoff values returned by the function is not as
+#' Notice that the list of cut off values returned by the function is not as
 #' complete as the one computed for a VLMC without covariates. Indeed, pruning
-#' the coVLMC tree creates new pruning opportunities that are not evaluated
+#' the COVLMC tree creates new pruning opportunities that are not evaluated
 #' during the construction of the initial model, while all pruning opportunities
 #' are computed during the construction of a VLMC context tree. Nevertheless,
 #' the largest value returned by the function is guaranteed to produce the least
 #' pruned tree consistent with the reference one.
 #'
-#' Notice that the loglikelihood scale is not directly useful in coVLMC as
-#' the differences in model sizes are not constant through the pruning process.
-#' As a consequence, the "native" scale is not supported by this function.
+#' For large COVLMC, some cut off values can be almost identical, with a
+#' difference of the order of the machine epsilon value. The `tolerance`
+#' parameter is used to keep only values that are different enough. This is done
+#' in the quantile scale, before transformations implemented when `raw` is
+#' `FALSE`.
 #'
-#' Setting `raw` to `TRUE` removes the small perturbation that are subtracted from
-#'  the log-likelihood ratio values computed from the coVLMC (in quantile scale).
+#' Notice that the loglikelihood scale is not directly useful in COVLMC as the
+#' differences in model sizes are not constant through the pruning process. As a
+#' consequence, this function does not provide `mode` parameter, contrarily to
+#' [cutoff.vlmc()].
 #'
-#' @param vlmc a fitted covlmc model.
-#' @param mode specify whether the results should be "native" likelihood ratio
-#'   values or expressed in a "quantile" scale of a chi-squared distribution.
-#'   For covlmc, only the quantile scale is supported.
-#' @param raw specify whether the returned values should be limit values computed in the model or
-#'  modified values that guarantee pruning (see details)
-#' @param ... additional arguments for the cutoff function.
-#' @returns a vector of cut off values, `NULL` is none can be computed
+#' Setting `raw` to `TRUE` removes the small perturbation that are subtracted
+#' from the log-likelihood ratio values computed from the COVLMC (in quantile
+#' scale).
+#'
+#' As automated model selection is provided by [tune_covlmc()], the direct use of
+#' `cutoff` should be reserved to advanced exploration of the set of trees that
+#' can be obtained from a complex one, e.g. to implement model selection
+#' techniques that are not provided by [tune_covlmc()].
+#'
+#' @param model a fitted COVLMC model.
+#' @param raw specify whether the returned values should be limit values
+#'   computed in the model or modified values that guarantee pruning (see
+#'   details)
+#' @param tolerance specify the minimum separation between two consecutive
+#'   values of the cut off in native mode (before any transformation). See
+#'   details.
+#' @param ... additional arguments for the `cutoff` function.
+#' @returns a vector of cut off values, `NULL` if none can be computed
 #'
 #' @examples
 #' pc <- powerconsumption[powerconsumption$week == 5, ]
@@ -744,11 +797,8 @@ assertthat::on_failure(is_covlmc) <- function(call, env) {
 #' draw(m_cov)
 #' cutoff(m_cov)
 #' @export
-cutoff.covlmc <- function(vlmc, mode = c("quantile", "native"), raw = FALSE, ...) {
-  mode <- match.arg(mode)
-  if (mode == "native") {
-    stop("native mode is not supported by covlmc objects")
-  }
+cutoff.covlmc <- function(model, raw = FALSE,
+                          tolerance = .Machine$double.eps^0.5, ...) {
   recurse_cutoff <- function(tree) {
     if (is.null(tree[["children"]])) {
       if (is.null(tree[["model"]])) {
@@ -758,7 +808,7 @@ cutoff.covlmc <- function(vlmc, mode = c("quantile", "native"), raw = FALSE, ...
         p_value <- NULL
         if (!is.null(tree$model[["p_value"]])) {
           p_value <- tree$model[["p_value"]]
-          if (is.na(p_value) || (length(tree$model[["coefficients"]]) == 1 && p_value > vlmc$alpha)) {
+          if (is.na(p_value) || (length(tree$model[["coefficients"]]) == 1 && p_value > model$alpha)) {
             p_value <- NULL
           }
         }
@@ -778,11 +828,11 @@ cutoff.covlmc <- function(vlmc, mode = c("quantile", "native"), raw = FALSE, ...
       c(df, tree$p_value, tree$merged_p_value)
     }
   }
-  preres <- recurse_cutoff(vlmc)
+  preres <- recurse_cutoff(model)
   if (is.null(preres)) {
     NULL
   } else {
-    preres <- unique(sort(preres, decreasing = TRUE))
+    preres <- relaxed_unique(sort(preres, decreasing = TRUE), tolerance)
     if (!raw) {
       preres <- before(preres)
       preres[preres < 0] <- 0
@@ -847,11 +897,28 @@ prune.covlmc <- function(vlmc, alpha = 0.05, cutoff = NULL, ...) {
   )
   pre_result <- new_ctx_tree(vlmc$vals, pruned_tree, count_context = count_covlmc_local_context, class = "covlmc")
   pre_result$cov_names <- vlmc$cov_names
-  pre_result$cov_desc <- vlmc$cov_desc
   pre_result$alpha <- alpha
+  pre_result$control <- vlmc$control
+  pre_result$cov_desc <- vlmc$cov_desc
+  pre_result$max_depth <- vlmc$max_depth
+  pre_result$data_size <- vlmc$data_size
   pre_result$x <- vlmc$x
   pre_result$covariate <- vlmc$covariate
-  pre_result$control <- vlmc$control
+  the_depth <- depth(pre_result)
+  if (the_depth > 0) {
+    pre_result$iix <- vlmc$iix[1:min(the_depth, length(vlmc$ix))]
+    pre_result$ix <- vlmc$ix[1:min(the_depth, length(vlmc$ix))]
+    pre_result$icov <- vlmc$icov[1:min(the_depth, length(vlmc$ix)), , drop = FALSE]
+    ## precompute the likelihood to enable trimming
+    icovlmc <- match_ctx(pre_result, pre_result$iix, keep_match = TRUE)
+    pre_result$extended_ll <- rec_loglikelihood_covlmc_newdata(
+      icovlmc, 0, length(pre_result$vals),
+      pre_result$ix, pre_result$icov
+    )
+  } else {
+    ## add match
+    pre_result$match <- 1:vlmc$data_size
+  }
   pre_result
 }
 
@@ -869,4 +936,66 @@ print.covlmc <- function(x, ...) {
     cat(paste(" Maximum context length:", x$depth, "\n"))
   }
   invisible(x)
+}
+
+
+rec_cov_depth <- function(ct) {
+  if (length(ct) == 0) {
+    0L
+  } else if (is.null(ct$children)) {
+    if (!is.null(ct$model)) {
+      ct$model$hsize
+    } else {
+      0L
+    }
+  } else {
+    below <- max(sapply(ct$children, rec_cov_depth))
+    if (!is.null(ct[["merged_model"]])) {
+      below <- max(below, ct$merged_model$hsize)
+    }
+    below
+  }
+}
+
+#' Maximal covariate memory of a VLMC with covariates
+#'
+#' This function return the longest covariate memory used by a VLMC
+#' with covariates.
+#'
+#' @param model a covlmc object
+#' @returns the longest covariate memory of this model
+#'
+#' @export
+#' @examples
+#' pc <- powerconsumption[powerconsumption$week == 5, ]
+#' dts <- cut(pc$active_power, breaks = c(0, quantile(pc$active_power, probs = c(0.5, 1))))
+#' m_nocovariate <- vlmc(dts)
+#' dts_cov <- data.frame(day_night = (pc$hour >= 7 & pc$hour <= 17))
+#' m_cov <- covlmc(dts, dts_cov, min_size = 10)
+#' covariate_depth(m_cov)
+covariate_depth <- function(model) {
+  assertthat::assert_that(is_covlmc(model))
+  rec_cov_depth(model)
+}
+
+rec_count_parameters <- function(ct, with_extended = FALSE, d, md) {
+  local_counts <- 0
+  if (!is.null(ct$model)) {
+    local_counts <- local_counts + length(ct$model$coefficients)
+  }
+  if (!is.null(ct$merged_model)) {
+    local_counts <- local_counts + length(ct$merged_model$coefficients)
+  }
+  if (with_extended && d < md && !is.null(ct$extended_model)) {
+    local_counts <- local_counts + length(ct$extended_model$coefficients)
+  }
+  if (!is.null(ct$children)) {
+    local_counts <- local_counts + sum(sapply(ct$children, rec_count_parameters, with_extended, d + 1, md))
+  }
+  local_counts
+}
+
+count_parameters <- function(model, with_extended = FALSE) {
+  assertthat::assert_that(is_covlmc(model))
+  rec_count_parameters(model, with_extended, 0, depth(model))
 }
